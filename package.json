@@ -1,0 +1,9 @@
+{
+  "name": "call-status",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Simple Teams-style status background app",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teams Status Background</title>
+  <style>
+    :root {
+      --teams-available: #92c353;
+      --teams-busy: #c4314b;
+      --teams-dnd: #8b1b3f;
+      --teams-away: #f8d22a;
+      --teams-berightback: #ffb900;
+      --teams-offline: #8a8886;
+      --text: #111;
+      --panel: rgba(255, 255, 255, 0.88);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      display: grid;
+      place-items: center;
+      background: #f3f2f1;
+      color: var(--text);
+      transition: background-color 180ms ease-in-out;
+    }
+
+    .app {
+      width: min(92vw, 560px);
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: 1.25rem;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+
+    .app.hidden {
+      display: none;
+    }
+
+    .toggle {
+      border: 1px solid #d2d0ce;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      background: #fff;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      background: #fff;
+    }
+
+    button:hover {
+      opacity: 0.92;
+    }
+
+    .current {
+      margin-top: 14px;
+      font-size: 2.95rem;
+    }
+
+    .help-trigger {
+      position: fixed;
+      right: 12px;
+      bottom: 12px;
+      width: 28px;
+      height: 28px;
+      border: 1px solid #d2d0ce;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #323130;
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hidden-help {
+      display: none;
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.92);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .hidden-help.visible {
+      display: block;
+    }
+
+    .hidden-help h2 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+
+    .hidden-help ol {
+      margin: 0;
+      padding-left: 18px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="app">
+      <h1>Microsoft Teams Status</h1>
+      <!-- <div class="controls">
+        <button class="toggle" id="toggleApp" type="button" aria-expanded="true">Minimize app</button>
+      </div> -->
+      <div class="buttons" id="statusButtons"></div>
+      <section id="hiddenHelp" class="hidden-help" aria-hidden="true">
+        <h2>Always-on-top setup (hidden help)</h2>
+        <ol>
+          <li>Open your browser extension store (Chrome Web Store / Edge Add-ons / Firefox Add-ons).</li>
+          <li>Search for an extension like <em>always on top</em> or <em>pin window</em>.</li>
+          <li>Install the extension and allow any requested window permissions.</li>
+          <li>Pin the extension to your toolbar (optional) for quick access.</li>
+          <li>Activate it on this tab/window so the status page stays above other windows.</li>
+        </ol>
+      </section>
+      <button id="helpTrigger" class="help-trigger" type="button" aria-label="Toggle hidden help">?</button>
+    </div>
+    <p class="current"><strong id="currentStatus"></strong></p>
+  </main>
+
+  <script>
+    const statuses = [
+      { label: 'Available', color: getComputedStyle(document.documentElement).getPropertyValue('--teams-available').trim() },
+      { label: 'Busy', color: getComputedStyle(document.documentElement).getPropertyValue('--teams-busy').trim() },
+      { label: 'In a call/meeting', color: getComputedStyle(document.documentElement).getPropertyValue('--teams-busy').trim() },
+      { label: 'Do not disturb', color: getComputedStyle(document.documentElement).getPropertyValue('--teams-dnd').trim() },
+    ];
+
+    const app = document.querySelector('.app');
+    const container = document.getElementById('statusButtons');
+    const currentStatus = document.getElementById('currentStatus');
+    const body = document.querySelector('body');
+    const hiddenHelp = document.getElementById('hiddenHelp');
+    const helpTrigger = document.getElementById('helpTrigger');
+
+    function setHelpVisible(isVisible) {
+      hiddenHelp.classList.toggle('visible', isVisible);
+      hiddenHelp.setAttribute('aria-hidden', String(!isVisible));
+    }
+
+    function setStatus(status) {
+      document.body.style.backgroundColor = status.color;
+      currentStatus.textContent = status.label;
+      setAppMinimized(true);
+    }
+
+    function setAppMinimized(isMinimized) {
+      app.classList.toggle('hidden', isMinimized);
+      document.querySelector('p.current').hidden = !isMinimized;
+    }
+
+    statuses.forEach((status) => {
+      const button = document.createElement('button');
+      button.textContent = status.label;
+      button.style.backgroundColor = status.color;
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setStatus(status);
+      });
+      container.appendChild(button);
+    });
+
+    body.addEventListener('click', () => {
+      setAppMinimized(false);
+    })
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === '?') {
+        const isVisible = hiddenHelp.classList.contains('visible');
+        setHelpVisible(!isVisible);
+      }
+    });
+
+    helpTrigger.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const isVisible = hiddenHelp.classList.contains('visible');
+      setHelpVisible(!isVisible);
+    });
+
+    setStatus(statuses[0])
+  </script>
+</body>
+</html>
